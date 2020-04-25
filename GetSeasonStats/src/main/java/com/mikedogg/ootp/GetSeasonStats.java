@@ -1,0 +1,153 @@
+package com.mikedogg.ootp;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeMap;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
+import com.opencsv.CSVReader;
+
+public class GetSeasonStats {
+
+	public static void main(String[] args) throws IOException {
+		// TODO Auto-generated method stub
+		assembleStatsAndOutput();
+	}
+	
+	private static void assembleStatsAndOutput() throws IOException {
+		
+		//read in owned players file
+		String ownedPlayerFile="D://baseball//2020//OOTP//RefFiles//BxscRosterMappedToOOTP.csv";
+
+	    Reader reader = Files.newBufferedReader(Paths.get(ownedPlayerFile));
+	    CSVReader csvReader = new CSVReader(reader);
+	    List<String[]> list = new ArrayList<String[]>();
+	    list = csvReader.readAll();
+	    reader.close();
+	    csvReader.close();
+	    
+	    TreeMap<String, OwnedPlayers> ownedPlayers = new TreeMap<String, OwnedPlayers>();
+	    int idx = 0;
+	    for (String[] i:list) {
+	    	if (idx == 0) {
+	    		idx = 1;
+	    		continue;
+	    	}
+	    	// input = owner, team, bxscname,ootpname, ootpplayerid
+	    	// TreeMap key=ootpPlayerId value=OwnedPlayers instance
+	    	ownedPlayers.put(i[4], new OwnedPlayers(i[4],i[0],i[1],i[2],i[3]));
+	    }
+	    
+	    // parse batters
+		Document document = Jsoup.connect("https://www.baseball-reference.com/sim/leagues/MLB/2020-batting.shtml").get();
+		Element elementsTbody = document.getElementsByTag("tbody").first();
+		
+		// open output file for batters
+	    FileWriter myWriter = new FileWriter("d:\\baseball\\2020\\OOTP\\TestDailyFiles\\allPlayersRef.csv");
+//	    myWriter.write("Owner,PlayerId,PlayerName,Team,AB,Runs,Hits,HR,RBI,SB\n");
+	    
+		TreeMap<String,AllPlayersRef> allPlayersRef = new TreeMap<String, AllPlayersRef> ();
+
+		idx  = 0;
+		do {
+			
+			idx += 1;
+			
+			if (idx==2)  {
+				document = Jsoup.connect("https://www.baseball-reference.com/sim/leagues/MLB/2020-pitching.shtml").get();
+				elementsTbody = document.getElementsByTag("tbody").first();
+			}
+		
+			// loop through all rows to get stats for each player
+			for (Element e:elementsTbody.children()) {
+			    
+				// load batting players into TreeMap as a means of keeping only unique occurrances
+				String playerId = e.getElementsByAttributeValue("data-stat", "player").select("a").first().attr("href");
+				String owner = "";
+				if (ownedPlayers.containsKey(playerId))
+					owner = ownedPlayers.get(playerId).getOwner();
+				String fullName = e.getElementsByAttributeValue("data-stat", "player").select("a").first().text();
+				String team = e.getElementsByAttributeValue("data-stat", "team_ID").select("a").first().text();
+				if (idx == 1) {
+					int ab = Integer.parseInt(e.getElementsByAttributeValue("data-stat", "AB").first().text());
+					int r = Integer.parseInt(e.getElementsByAttributeValue("data-stat", "R").first().text());
+					int h = Integer.parseInt(e.getElementsByAttributeValue("data-stat", "H").first().text());
+					int hr = Integer.parseInt(e.getElementsByAttributeValue("data-stat", "HR").first().text());
+					int rbi = Integer.parseInt(e.getElementsByAttributeValue("data-stat", "RBI").first().text());
+					int sb = Integer.parseInt(e.getElementsByAttributeValue("data-stat", "SB").first().text());
+					allPlayersRef.put(playerId,new AllPlayersRef(playerId,owner,fullName,team,ab,r,h,hr,rbi,sb,0,0,0,0,0,0));
+				}
+				else {
+					int w = Integer.parseInt(e.getElementsByAttributeValue("data-stat", "W").first().text());
+					int sv = Integer.parseInt(e.getElementsByAttributeValue("data-stat", "SV").first().text());
+					int hold = Integer.parseInt(e.getElementsByAttributeValue("data-stat", "HOLD").first().text());
+					float ip = Float.parseFloat(e.getElementsByAttributeValue("data-stat", "IP").first().text());
+					int er = Integer.parseInt(e.getElementsByAttributeValue("data-stat", "ER").first().text());
+					int so = Integer.parseInt(e.getElementsByAttributeValue("data-stat", "SO").first().text());
+					if (!allPlayersRef.containsKey(playerId))
+						allPlayersRef.put(playerId,new AllPlayersRef(playerId,owner,fullName,team,0,0,0,0,0,0,w,sv,hold,ip,er,so));
+					else
+						allPlayersRef.replace (playerId,allPlayersRef.get(playerId).addPicherStats(w,sv,hold,ip,er,so));
+				}
+	
+			}
+		} while (idx < 2);
+	    FileWriter myWriterHit = new FileWriter("d:\\baseball\\2020\\OOTP\\TestDailyFiles\\allPlayersHit.csv");
+	    FileWriter myWriterPit = new FileWriter("d:\\baseball\\2020\\OOTP\\TestDailyFiles\\allPlayersPit.csv");
+	    
+	    myWriterHit.write("Owner,Player,Team,AB,R,H,HR,RBI,SB\n");
+	    myWriterPit.write("Owner,Player,Team,WIN,SV,HOLD,IP,ER,SO\n");
+		
+		myWriter.write("Owner,PlayerId,PlayerName,PlayerTeam\n");
+		for (String player:allPlayersRef.keySet()) {
+			myWriter.write(allPlayersRef.get(player).getOwner()+","
+					+allPlayersRef.get(player).getPlayerId()+","
+					+allPlayersRef.get(player).getFullName()+","
+					+allPlayersRef.get(player).getTeam()
+					+"\n"
+			);
+			if (allPlayersRef.get(player).getIp() > 0)
+				myWriterPit.write(allPlayersRef.get(player).getOwner()+","
+						+allPlayersRef.get(player).getFullName()+","
+						+allPlayersRef.get(player).getTeam()+","
+						+allPlayersRef.get(player).getW()+","
+						+allPlayersRef.get(player).getSv()+","
+						+allPlayersRef.get(player).getHold()+","
+						+allPlayersRef.get(player).getIp()+","
+						+allPlayersRef.get(player).getEr()+","
+						+allPlayersRef.get(player).getSo()+"\n"
+				);
+			else
+				myWriterHit.write(allPlayersRef.get(player).getOwner()+","
+						+allPlayersRef.get(player).getFullName()+","
+						+allPlayersRef.get(player).getTeam()+","
+						+allPlayersRef.get(player).getAb()+","
+						+allPlayersRef.get(player).getR()+","
+						+allPlayersRef.get(player).getH()+","
+						+allPlayersRef.get(player).getHr()+","
+						+allPlayersRef.get(player).getRbi()+","
+						+allPlayersRef.get(player).getSb()+"\n"
+				);
+				
+		}
+		
+		myWriter.close();	
+		myWriterHit.close();	
+		myWriterPit.close();	
+		
+		// print owned players not found
+		for (String k: ownedPlayers.keySet()) {
+			if (!allPlayersRef.containsKey(k)) 
+				System.out.println(ownedPlayers.get(k).getOwner()+" "+ownedPlayers.get(k).getOotpName()+" "+ownedPlayers.get(k).getTeam()+" "+k);
+		}
+	}
+
+}
