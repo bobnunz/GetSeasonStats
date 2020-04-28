@@ -46,6 +46,27 @@ public class GetSeasonStats {
 	    	ownedPlayers.put(i[4], new OwnedPlayers(i[4],i[0],i[1],i[2],i[3]));
 	    }
 	    
+	    // read in owned MINORS players
+		ownedPlayerFile="D://baseball//2020//OOTP//RefFiles//ootpMinorPlayers.csv";
+	    reader = Files.newBufferedReader(Paths.get(ownedPlayerFile));
+	    csvReader = new CSVReader(reader);
+	    list = new ArrayList<String[]>();
+	    list = csvReader.readAll();
+	    reader.close();
+	    csvReader.close();
+	    
+	    TreeMap<String, OotpMinorPlayers> ootpMinorPlayers = new TreeMap<String, OotpMinorPlayers>();
+	    idx = 0;
+	    for (String[] i:list) {
+	    	if (idx == 0) {
+	    		idx = 1;
+	    		continue;
+	    	}
+	    	// input = owner, bxscname,ootpplayerid
+	    	// TreeMap key=ootpPlayerId value=OotpMinorPlayer instance
+	    	ootpMinorPlayers.put(i[2], new OotpMinorPlayers(i[0],i[1],i[2]));
+	    }
+	    
 	    // parse batters
 		Document document = Jsoup.connect("https://www.baseball-reference.com/sim/leagues/MLB/2020-batting.shtml").get();
 		Element elementsTbody = document.getElementsByTag("tbody").first();
@@ -73,7 +94,9 @@ public class GetSeasonStats {
 				String playerId = e.getElementsByAttributeValue("data-stat", "player").select("a").first().attr("href");
 				String owner = "";
 				if (ownedPlayers.containsKey(playerId))
-					owner = ownedPlayers.get(playerId).getOwner();
+					owner = ownedPlayers.get(playerId).getOwner().toUpperCase();
+				else if (ootpMinorPlayers.containsKey(playerId))
+					owner = ootpMinorPlayers.get(playerId).getOwner();					
 				String fullName = e.getElementsByAttributeValue("data-stat", "player").select("a").first().text();
 				String team = e.getElementsByAttributeValue("data-stat", "team_ID").select("a").first().text();
 				if (idx == 1) {
@@ -146,7 +169,11 @@ public class GetSeasonStats {
 		// print owned players not found
 		for (String k: ownedPlayers.keySet()) {
 			if (!allPlayersRef.containsKey(k)) 
-				System.out.println(ownedPlayers.get(k).getOwner()+" "+ownedPlayers.get(k).getOotpName()+" "+ownedPlayers.get(k).getTeam()+" "+k);
+				System.out.println(ownedPlayers.get(k).getOwner().toUpperCase()+" "+ownedPlayers.get(k).getOotpName()+" "+ownedPlayers.get(k).getTeam()+" "+k);
+		}
+		for (String k: ootpMinorPlayers.keySet()) {
+			if (!allPlayersRef.containsKey(k)) 
+				System.out.println(ootpMinorPlayers.get(k).getOwner()+" "+ootpMinorPlayers.get(k).getBxscPlayer()+" "+ootpMinorPlayers.get(k).getOotpPlayerId()+" "+k);
 		}
 	}
 
