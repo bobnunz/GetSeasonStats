@@ -18,10 +18,11 @@ public class AllPlayersRef {
 	private float ip;
 	private int er;
 	private int so;
+	private int bb;
 	
 	
 	public AllPlayersRef(String playerId, String owner, String fullName, String team, int ab, int r, int h, int hr, int rbi,
-			int sb, int w, int sv, int hold, float ip, int er, int so) {
+			int sb, int w, int sv, int hold, float ip, int er, int so, int bb) {
 		super();
 		this.playerId = playerId;
 		this.owner = owner;
@@ -39,6 +40,7 @@ public class AllPlayersRef {
 		this.ip = ip;
 		this.er = er;
 		this.so = so;
+		this.bb = bb;
 	}
 	public int getAb() {
 		return ab;
@@ -136,8 +138,14 @@ public class AllPlayersRef {
 	public void setSo(int so) {
 		this.so = so;
 	}
+	public int getBb() {
+		return bb;
+	}
+	public void setBb(int bb) {
+		this.bb = bb;
+	}
 	
-	public AllPlayersRef addPicherStats (int w, int sv, int hold, float ip, int er, int so) {
+	public AllPlayersRef addPicherStats (int w, int sv, int hold, float ip, int er, int so, int bb) {
 		
 		this.w = w;
 		this.sv = sv;
@@ -145,6 +153,7 @@ public class AllPlayersRef {
 		this.ip = ip;
 		this.er = er;
 		this.so = so;
+		this.so = bb;
 
 		return this;
 	}
