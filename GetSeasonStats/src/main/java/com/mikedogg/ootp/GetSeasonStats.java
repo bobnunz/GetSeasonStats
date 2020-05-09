@@ -173,7 +173,7 @@ public class GetSeasonStats {
 		// print owned players not found
 		for (String k: ownedPlayers.keySet()) {
 			if (!allPlayersRef.containsKey(k)) 
-				myWriter.write(ownedPlayers.get(k).getOwner().toUpperCase()+","+k+","+ownedPlayers.get(k).getOotpName()+","+ownedPlayers.get(k).getTeam()+"\n");
+				myWriter.write(ownedPlayers.get(k).getOwner()+","+k+","+ownedPlayers.get(k).getOotpName()+","+ownedPlayers.get(k).getTeam()+"\n");
 		}
 		/*
 		for (String k: ootpMinorPlayers.keySet()) {
