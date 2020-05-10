@@ -153,7 +153,7 @@ public class AllPlayersRef {
 		this.ip = ip;
 		this.er = er;
 		this.so = so;
-		this.so = bb;
+		this.bb = bb;
 
 		return this;
 	}
