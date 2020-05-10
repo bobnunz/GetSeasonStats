@@ -2,12 +2,14 @@ package com.mikedogg.ootp;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.TreeMap;
 
 import org.jsoup.Jsoup;
@@ -19,9 +21,34 @@ import com.opencsv.CSVReader;
 public class GetSeasonStats {
 
 	public static void main(String[] args) throws IOException {
-		// TODO Auto-generated method stub
+		
+		// load app properties file
+		
+        try (InputStream input = ClassLoader.getSystemClassLoader().getResourceAsStream("/ootpconfig.properties")) {
+
+            Properties prop = new Properties();
+
+            if (input == null) {
+                System.out.println("Sorry, unable to find ootpconfig.properties");
+                return;
+            }
+
+            //load a properties file from class path, inside static method
+            prop.load(input);
+
+            //get the property value and print it out
+            System.out.println(prop.getProperty("seasonBattingLoc"));
+            System.out.println(prop.getProperty("seasonPitchingLoc"));
+            System.out.println(prop.getProperty("masterPlayerFile"));
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
 		assembleStatsAndOutput();
+		
 	}
+	
 	
 	private static void assembleStatsAndOutput() throws IOException {
 		
