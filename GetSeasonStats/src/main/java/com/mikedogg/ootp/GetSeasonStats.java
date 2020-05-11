@@ -9,6 +9,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -38,15 +39,13 @@ public class GetSeasonStats {
             prop.load(input);
             input.close();
 
-            // print ootpconfig.properties to console
-            PrintWriter writer = new PrintWriter(System.out);
+            // print all properties and values in ootpconfig.properties
+            Enumeration < ? > enumeration = prop.propertyNames();
             
-            // print the list with a PrintWriter object
-            prop.list(writer);
-
-            // flush and close the stream
-            writer.flush(); 
-            writer.close();
+            while (enumeration.hasMoreElements()) {
+            	String name = (String) enumeration.nextElement();
+                System.out.println(name+": "+prop.getProperty(name));
+            }
 
             
             assembleStatsAndOutput(prop);
