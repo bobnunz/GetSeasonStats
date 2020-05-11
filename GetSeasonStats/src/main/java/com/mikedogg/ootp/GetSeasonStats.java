@@ -3,6 +3,7 @@ package com.mikedogg.ootp;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -24,7 +25,7 @@ public class GetSeasonStats {
 		
 		// load app properties file
 		
-        try (InputStream input = ClassLoader.getSystemClassLoader().getResourceAsStream("/ootpconfig.properties")) {
+        try (InputStream input = ClassLoader.getSystemClassLoader().getResourceAsStream("ootpconfig.properties")) {
 
             Properties prop = new Properties();
 
@@ -35,27 +36,35 @@ public class GetSeasonStats {
 
             //load a properties file from class path, inside static method
             prop.load(input);
+            input.close();
 
-            //get the property value and print it out
-            System.out.println(prop.getProperty("seasonBattingLoc"));
-            System.out.println(prop.getProperty("seasonPitchingLoc"));
-            System.out.println(prop.getProperty("masterPlayerFile"));
+            // print ootpconfig.properties to console
+            PrintWriter writer = new PrintWriter(System.out);
+            
+            // print the list with a PrintWriter object
+            prop.list(writer);
+
+            // flush and close the stream
+            writer.flush(); 
+            writer.close();
+
+            
+            assembleStatsAndOutput(prop);
 
         } catch (IOException ex) {
             ex.printStackTrace();
         }
 
-		assembleStatsAndOutput();
 		
 	}
 	
 	
-	private static void assembleStatsAndOutput() throws IOException {
+	private static void assembleStatsAndOutput(Properties prop) throws IOException {
 		
 		//read in owned players file
-		String ownedPlayerFile="D://baseball//2020//OOTP//RefFiles//master_players_file.csv";
+//		String ownedPlayerFile="D://baseball//2020//OOTP//RefFiles//master_players_file.csv";
 
-	    Reader reader = Files.newBufferedReader(Paths.get(ownedPlayerFile), Charset.forName("windows-1252"));
+	    Reader reader = Files.newBufferedReader(Paths.get(prop.getProperty("masterPlayerFile")), Charset.forName("windows-1252"));
 	    CSVReader csvReader = new CSVReader(reader);
 	    List<String[]> list = new ArrayList<String[]>();
 	    list = csvReader.readAll();
@@ -97,11 +106,12 @@ public class GetSeasonStats {
 	    }
 */	    
 	    // parse batters
-		Document document = Jsoup.connect("https://www.baseball-reference.com/sim/leagues/MLB/2020-batting.shtml").get();
+//		Document document = Jsoup.connect("https://www.baseball-reference.com/sim/leagues/MLB/2020-batting.shtml").get();
+		Document document = Jsoup.connect(prop.getProperty("seasonBattingURL")).get();
 		Element elementsTbody = document.getElementsByTag("tbody").first();
 		
 		// open output file for batters
-	    FileWriter myWriter = new FileWriter("d:\\baseball\\2020\\OOTP\\TestDailyFiles\\allPlayersRef.csv");
+	    FileWriter myWriter = new FileWriter(prop.getProperty("newMasterPlayerFile"));
 //	    myWriter.write("Owner,PlayerId,PlayerName,Team,AB,Runs,Hits,HR,RBI,SB\n");
 	    
 		TreeMap<String,AllPlayersRef> allPlayersRef = new TreeMap<String, AllPlayersRef> ();
@@ -112,7 +122,8 @@ public class GetSeasonStats {
 			idx += 1;
 			
 			if (idx==2)  {
-				document = Jsoup.connect("https://www.baseball-reference.com/sim/leagues/MLB/2020-pitching.shtml").get();
+//				document = Jsoup.connect("https://www.baseball-reference.com/sim/leagues/MLB/2020-pitching.shtml").get();
+				document = Jsoup.connect(prop.getProperty("seasonPitchingURL")).get();
 				elementsTbody = document.getElementsByTag("tbody").first();
 			}
 		
@@ -153,8 +164,8 @@ public class GetSeasonStats {
 	
 			}
 		} while (idx < 2);
-	    FileWriter myWriterHit = new FileWriter("d:\\baseball\\2020\\OOTP\\TestDailyFiles\\allPlayersHit.csv");
-	    FileWriter myWriterPit = new FileWriter("d:\\baseball\\2020\\OOTP\\TestDailyFiles\\allPlayersPit.csv");
+	    FileWriter myWriterHit = new FileWriter(prop.getProperty("seasonBattingFile"));
+	    FileWriter myWriterPit = new FileWriter(prop.getProperty("seasonPitchingFile"));
 	    
 	    myWriterHit.write("Owner,Player,Team,AB,R,H,HR,RBI,SB\n");
 	    myWriterPit.write("Owner,Player,Team,WIN,SV,HOLD,IP,ER,SO,BB\n");
